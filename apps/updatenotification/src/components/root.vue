@@ -63,20 +63,57 @@
 			</template>
 		</div>
 
+		<h3 class="update-channel-selector">
+			{{ t('updatenotification', 'Update channel:') }}
+			{{ localizedChannelName }}
+			<div class="update-menu">
+				<span class="icon-update-menu" @click="toggleUpdateChannelMenu" v-bind:class="{ 'icon-public': currentChannel === 'production', 'icon-tag': currentChannel === 'stable', 'icon-category-customization': currentChannel === 'beta', 'icon-rename': isNonDefaultChannel }">
+					<span class="icon-triangle-s"></span>
+				</span>
+				<div class="update-channel-menu popovermenu bubble menu menu-center" v-bind:class="{ 'show-menu': openedUpdateChannelMenu}"><ul>
+					<li>
+						<a href="#" class="menuitem action action-private permanent" v-bind:class="{ active: currentChannel === 'production' }" @click.prevent="changeReleaseChannel('production')">
+							<span class="icon icon-public"></span>
+							<p>
+								<strong class="menuitem-text">{{ t('updatenotification', 'Production') }}</strong><br>
+								<span class="menuitem-text-detail">{{ t('updatenotification', 'Will always provide the latest patch level, but not update to the next major release immediately. That update usually happens with the second minor release (x.0.2).') }}</span>
+							</p>
+						</a>
+					</li>
+					<li>
+						<a href="#" class="menuitem action action-contacts permanent" v-bind:class="{ active: currentChannel === 'stable' }" @click.prevent="changeReleaseChannel('stable')">
+							<span class="icon icon-tag"></span>
+							<p>
+								<strong class="menuitem-text">{{ t('updatenotification', 'Stable') }}</strong><br>
+								<span class="menuitem-text-detail">{{ t('updatenotification', 'The most recent stable version. It is suited for regular use and will always update to the latest major version.') }}</span>
+							</p>
+						</a>
+					</li>
+					<li>
+						<a href="#" class="menuitem action action-public permanent" v-bind:class="{ active: currentChannel === 'beta' }" @click.prevent="changeReleaseChannel('beta')">
+							<span class="icon icon-category-customization"></span>
+							<p>
+								<strong class="menuitem-text">{{ t('updatenotification', 'Beta') }}</strong><br>
+								<span class="menuitem-text-detail">{{ t('updatenotification', 'A pre-release version only for testing new features, not for production environments.') }}</span>
+							</p>
+						</a>
+					</li>
+					<li v-if="currentChannel !== 'production' && currentChannel !== 'stable' && currentChannel !== 'beta'">
+						<a href="#" class="menuitem action action-public permanent active">
+							<span class="icon icon-rename"></span>
+							<p>
+								<strong class="menuitem-text">{{ currentChannel }}</strong><br>
+							</p>
+						</a>
+					</li>
+				</ul>
+				</div>
+			</div>
+		</h3>
+		<span id="channel_save_msg" class="msg"></span><br />
 		<p>
-			<label for="release-channel">{{ t('updatenotification', 'Update channel:') }}</label>
-			<select id="release-channel" v-model="currentChannel" @change="changeReleaseChannel">
-				<option v-for="channel in channels" :value="channel">{{channel}}</option>
-			</select>
-			<span id="channel_save_msg" class="msg"></span><br />
-			<em>{{ t('updatenotification', 'You can always update to a newer version / experimental channel. But you can never downgrade to a more stable channel.') }}</em><br />
+			<em>{{ t('updatenotification', 'You can always update to a newer version. But you can never downgrade to a more stable version.') }}</em><br />
 			<em>{{ t('updatenotification', 'Note that after a new release it can take some time before it shows up here. We roll out new versions spread out over time to our users and sometimes skip a version when issues are found.') }}</em>
-		</p>
-
-		<p class="channel-description">
-			<span v-html="productionInfoString"></span><br>
-			<span v-html="stableInfoString"></span><br>
-			<span v-html="betaInfoString"></span>
 		</p>
 
 		<p id="oca_updatenotification_groups">
@@ -131,11 +168,11 @@
 				hideMissingUpdates: false,
 				hideAvailableUpdates: true,
 				openedWhatsNew: false,
+				openedUpdateChannelMenu: false,
 			};
 		},
 
 		_$el: null,
-		_$releaseChannel: null,
 		_$notifyGroups: null,
 
 		watch: {
@@ -211,19 +248,7 @@
 					this.missingAppUpdates.length);
 			},
 
-			productionInfoString: function() {
-				return t('updatenotification', '<strong>production</strong> will always provide the latest patch level, but not update to the next major release immediately. That update usually happens with the second minor release (x.0.2).');
-			},
-
-			stableInfoString: function() {
-				return t('updatenotification', '<strong>stable</strong> is the most recent stable version. It is suited for regular use and will always update to the latest major version.');
-			},
-
-			betaInfoString: function() {
-				return t('updatenotification', '<strong>beta</strong> is a pre-release version only for testing new features, not for production environments.');
-			},
-
-			whatsNew: function () {
+			whatsNew: function() {
 				if(this.whatsNewData.length === 0) {
 					return null;
 				}
@@ -241,6 +266,27 @@
 					});
 				}
 				return whatsNew;
+			},
+
+			isNonDefaultChannel: function() {
+				return this.currentChannel !== 'production' && this.currentChannel !== 'stable' && this.currentChannel !== 'beta';
+			},
+
+			localizedChannelName: function() {
+				switch (this.currentChannel) {
+					case 'production':
+						return t('updatenotificaiton', 'Production');
+						break;
+					case 'stable':
+						return t('updatenotificaiton', 'Stable');
+						break;
+					case 'beta':
+						return t('updatenotificaiton', 'Beta');
+						break;
+					default:
+						return this.currentChannel;
+						break;
+				}
 			}
 		},
 
@@ -268,8 +314,8 @@
 					form.submit();
 				}.bind(this));
 			},
-			changeReleaseChannel: function() {
-				this.currentChannel = this._$releaseChannel.val();
+			changeReleaseChannel: function(channel) {
+				this.currentChannel = channel;
 
 				$.ajax({
 					url: OC.generateUrl('/apps/updatenotification/channel'),
@@ -281,6 +327,11 @@
 						OC.msg.finishedAction('#channel_save_msg', data);
 					}
 				});
+
+				this.openedUpdateChannelMenu = false;
+			},
+			toggleUpdateChannelMenu: function() {
+				this.openedUpdateChannelMenu = !this.openedUpdateChannelMenu;
 			},
 			toggleHideMissingUpdates: function() {
 				this.hideMissingUpdates = !this.hideMissingUpdates;
@@ -324,7 +375,6 @@
 		},
 		mounted: function () {
 			this._$el = $(this.$el);
-			this._$releaseChannel = this._$el.find('#release-channel');
 			this._$notifyGroups = this._$el.find('#oca_updatenotification_groups_list');
 			this._$notifyGroups.on('change', function () {
 				this.$emit('input');
@@ -350,6 +400,7 @@
 <style lang="sass" scoped>
 	#updatenotification {
 		margin-top: -25px;
+		margin-bottom: 200px;
 		div.update,
 		p:not(.inlineblock) {
 			margin-bottom: 25px;
@@ -365,6 +416,10 @@
 			&:first-of-type {
 				margin-top: 0;
 			}
+			&.update-channel-selector {
+				display: inline-block;
+				cursor: inherit;
+			}
 		}
 		.icon {
 			display: inline-block;
@@ -372,13 +427,6 @@
 		}
 		.icon-triangle-s, .icon-triangle-n {
 			opacity: 0.5;
-		}
-		.channel-description span {
-			color: var(--color-text-lighter);
-			strong {
-				color: var(--color-main-text);
-				font-weight: normal;
-			}
 		}
 		.warning {
 			color: var(--color-error);
@@ -399,6 +447,49 @@
 		}
 		.applist {
 			margin-bottom: 25px;
+		}
+
+		.update-menu {
+			position: relative;
+			cursor: pointer;
+			margin-left: 10px;
+			display: inline-block;
+			.icon-update-menu {
+				padding-left: 16px;
+				background-size: 16px;
+				background-position: left center;
+				opacity: .3;
+				cursor: inherit;
+				.icon-triangle-s {
+					display: inline-block;
+					vertical-align: middle;
+					cursor: inherit;
+					opacity: 1;
+				}
+			}
+			.update-channel-menu {
+				display: none;
+				top: 28px;
+				&.popovermenu {
+					.menuitem {
+						// override h3 heading font size
+						font-size: 12.8px;
+						line-height: 1.6em;
+						.menuitem-text-detail {
+							opacity: .75;
+						}
+						&.active {
+							box-shadow: inset 2px 0 var(--color-primary);
+							.menuitem-text {
+								font-weight: bold;
+							}
+						}
+					}
+				}
+				&.show-menu {
+					display: block;
+				}
+			}
 		}
 	}
 </style>
