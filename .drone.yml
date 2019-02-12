@@ -32,6 +32,7 @@ pipeline:
      - npm install
      - npm run build
      - git status
+     - git diff
      - bash -c "[[ ! \"`git status --porcelain js/`\" ]] || ( echo 'Uncommited changes in vue build' && exit 1 )"
     when:
       matrix:
