@@ -65,15 +65,15 @@
 
 		<h3 class="update-channel-selector">
 			{{ t('updatenotification', 'Update channel:') }}
-			{{ localizedChannelName }}
 			<div class="update-menu">
-				<span class="icon-update-menu" @click="toggleUpdateChannelMenu" v-bind:class="{ 'icon-public': currentChannel === 'production', 'icon-tag': currentChannel === 'stable', 'icon-category-customization': currentChannel === 'beta', 'icon-rename': isNonDefaultChannel }">
+				<span class="icon-update-menu" @click="toggleUpdateChannelMenu" v-bind:class="{ 'icon-star': currentChannel === 'production', 'icon-checkmark': currentChannel === 'stable', 'icon-category-customization': currentChannel === 'beta', 'icon-rename': isNonDefaultChannel }">
+					{{ localizedChannelName }}
 					<span class="icon-triangle-s"></span>
 				</span>
 				<div class="update-channel-menu popovermenu bubble menu menu-center" v-bind:class="{ 'show-menu': openedUpdateChannelMenu}"><ul>
 					<li>
 						<a href="#" class="menuitem action action-private permanent" v-bind:class="{ active: currentChannel === 'production' }" @click.prevent="changeReleaseChannel('production')">
-							<span class="icon icon-public"></span>
+							<span class="icon icon-star"></span>
 							<p>
 								<strong class="menuitem-text">{{ t('updatenotification', 'Production') }}</strong><br>
 								<span class="menuitem-text-detail">{{ t('updatenotification', 'Will always provide the latest patch level, but not update to the next major release immediately. That update usually happens with the second minor release (x.0.2).') }}</span>
@@ -82,7 +82,7 @@
 					</li>
 					<li>
 						<a href="#" class="menuitem action action-contacts permanent" v-bind:class="{ active: currentChannel === 'stable' }" @click.prevent="changeReleaseChannel('stable')">
-							<span class="icon icon-tag"></span>
+							<span class="icon icon-checkmark"></span>
 							<p>
 								<strong class="menuitem-text">{{ t('updatenotification', 'Stable') }}</strong><br>
 								<span class="menuitem-text-detail">{{ t('updatenotification', 'The most recent stable version. It is suited for regular use and will always update to the latest major version.') }}</span>
@@ -455,10 +455,10 @@
 			margin-left: 10px;
 			display: inline-block;
 			.icon-update-menu {
-				padding-left: 16px;
+				padding-left: 22px;
 				background-size: 16px;
 				background-position: left center;
-				opacity: .3;
+				background-position-y: 2px;
 				cursor: inherit;
 				.icon-triangle-s {
 					display: inline-block;
@@ -466,6 +466,10 @@
 					cursor: inherit;
 					opacity: 1;
 				}
+			}
+			/* override needed to replace yellow hover state with a dark one */
+			.icon-star:hover, .icon-star:hover {
+				background-image: var(--icon-star-000);
 			}
 			.update-channel-menu {
 				display: none;
